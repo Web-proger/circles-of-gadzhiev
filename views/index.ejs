@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel='stylesheet' href='/stylesheets/style.css'/>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.js"></script>
+</head>
+<body>
+<div class="container-fluid" id="app">
+    <h1><%= title %></h1>
+    <p class="mb-2"><em>*Первые задачи будут в центре.</em></p>
+    <form id="form" action="/data/" method="post">
+        <table class="table table-bordered">
+            <thead class="thead-dark">
+                <tr>
+                    <th class="tab-num">#</th>
+                    <th class="tab-sector-count">Количество секторов</th>
+                    <th class="tab-color">Цвет</th>
+                    <th class="tab-task">Задача</th>
+                    <th class="tab-del">del</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="(row, i) in rows">
+                    <th>
+                        <input v-model="rows[i].num = i" type="number" :name="'tasks[' + i + '][num]'" class="form-control"
+                               placeholder="номер круга" readonly>
+                    </th>
+                    <td>
+                        <input v-model="rows[i].count" type="number" :name="'tasks[' + i + '][count]'" class="form-control"
+                               placeholder="сектора" required>
+                    </td>
+                    <td class="relative">
+                        <input v-model="rows[i].color" type="text" :name="'tasks[' + i + '][color]'" class="form-control" placeholder="цвет" required>
+                        <span class="color-preview" :style="{'background-color': rows[i].color}"></span>
+                    </td>
+                    <td>
+                        <input v-model="rows[i].task" type="text" :name="'tasks[' + i + '][task]'" class="form-control" placeholder="задача" required>
+                    </td>
+                    <td>
+                        <button class="btn btn-danger" type="button" @click="deleteTask(i)">-</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <button class="btn btn-success mt-2 mr-1" type="button" @click="addNewNode">Добавить задачу</button>
+        <button class="btn btn-success mt-2 mr-1" type="button" @click="preview">Preview</button>
+        <button class="btn btn-success mt-2 mr-1" type="button" @click="getRandomColor">Random color</button>
+        <button class="btn btn-success mt-2" type="submit">Страница для печати</button>
+    </form>
+    <div class="d-flex align-items-center mt-2" v-if="visible">
+        <svg id="arcs" style="height: 400px;width: 400px;">
+            <path v-for="element in dataArray.slice().reverse()" :id="element.id" :d="element.d" fill="white" :stroke="element.color" stroke-width="3" />
+        </svg>
+        <table style="font-family: sans-serif;font-size:12px">
+            <tr v-for="element in elements.slice().reverse()"><td class="bull" style="font-size:50px;line-height:0" :style="{color: element.color}">&bull;</td><td v-text="element.task"></td></tr>
+        </table>
+    </div>
+</div>
+<script>
+    var app =new Vue({
+        el: '#app',
+        data: {
+            rows: [{
+                num: 0,
+                count: '',
+                color: '',
+                task: ''
+            }],
+            visible: false,
+            elements: [],
+            SECTOR_HEIGHT: 25,
+            dataArray: []
+        },
+        methods: {
+            addNewNode() {
+                this.rows.push({num: '', count: '', color: '', task: ''});
+            },
+            deleteTask(i) {
+                this.rows.splice(i, 1);
+            },
+            getRandomColor() {
+                this.rows.forEach(item => {
+                    item.color = '#' + Math.random().toString(16).slice(2, 8);
+                })
+            },
+            preview() {
+                this.visible = true;
+                this.elements = this.rows.slice();
+                this.onload();
+            },
+            onload() {
+                function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+                    var angleInRadians = (angleInDegrees-90) * Math.PI / 180.0;
+                    return {
+                        x: centerX + (radius * Math.cos(angleInRadians)),
+                        y: centerY + (radius * Math.sin(angleInRadians))
+                    };
+                }
+                function describeArc(x, y, radius, startAngle, endAngle){
+                    var p = app.$data.SECTOR_HEIGHT;
+                    var start = polarToCartesian(x, y, radius, endAngle);
+                    var end = polarToCartesian(x, y, radius, startAngle);
+                    var start10 = polarToCartesian(x, y, radius - p, endAngle);
+                    var end10 = polarToCartesian(x, y, radius - p, startAngle);
+
+                    var largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+
+                    var d = [
+                        "M", start.x, start.y,
+                        "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y,
+                        "L", end10.x, end10.y,
+                        "A", radius-p, radius-p, 0, largeArcFlag, 1, start10.x, start10.y,
+                        "Z"
+                    ].join(" ");
+
+                    return d;
+                }
+                function paint(item, s, radius, num) {
+                    var startAngle, endAngle;
+                    var i = 0;
+                    var p = 360/item.count;
+                    for (i; i < item.count; i++) {
+                        startAngle = s + (i * p);
+                        endAngle = s + ((i+1) * p);
+                        app.$data.dataArray.push({
+                            id: 'arc' + item.num + '-' + i,
+                            color: item.color,
+                            d: describeArc(cX, cY, radius, startAngle, endAngle)
+                        })
+                    }
+                }
+                var cX = 200, cY = 200;
+                this.SECTOR_HEIGHT = 18;
+
+                //paint(количествоДелений, s, радиус) - рисуем подкруги и сектора в них
+                var s = 0, radius = 18;
+                app.$data.dataArray = [];
+                this.elements.forEach((item, i) => {
+                    paint(item, s, radius);
+                    s = s + 20; radius = radius +18
+                });
+            }
+        }
+    });
+</script>
+</body>
+</html>

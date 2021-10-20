@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<meta name="robots" content="noindex">
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Мой баланс</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.js"></script>
+</head>
+<body>
+<div id="app">
+    <svg id="arcs" style="position:absolute; top: 40px; left: 40px;height: 400px;width: 400px;">
+        <path v-for="element in getArray().reverse()" :id="element.id" fill="white" :stroke="element.color" stroke-width="3" />
+    </svg>
+    <table style="position: absolute; top: 40px; left: 440px;font-family: sans-serif;font-size:12px">
+        <tr v-for="element in elements.reverse()"><td class="bull" style="font-size:50px;line-height:0" :style="{color: element.color}">&bull;</td><td v-text="element.task"></td></tr>
+    </table>
+</div>
+
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            title: 'Hello world',
+            elements: <%- JSON.stringify(moreDatas) %>,
+        },
+        methods: {
+            getArray: function () {
+                var dataArray = [];
+                this.elements.forEach(item => {
+                    for(var i = 0; i <= +item.count; i++) {
+                        dataArray.push({
+                            id: 'arc' + item.num + '-' + i,
+                            color: item.color
+                        })
+                    }
+                });
+                return dataArray
+            }
+        }
+    });
+</script>
+<script>
+    var SECTOR_HEIGHT = 25;
+    function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+        var angleInRadians = (angleInDegrees-90) * Math.PI / 180.0;
+        return {
+            x: centerX + (radius * Math.cos(angleInRadians)),
+            y: centerY + (radius * Math.sin(angleInRadians))
+        };
+    }
+
+    function describeArc(x, y, radius, startAngle, endAngle){
+        var p = SECTOR_HEIGHT;
+        var start = polarToCartesian(x, y, radius, endAngle);
+        var end = polarToCartesian(x, y, radius, startAngle);
+
+        var start10 = polarToCartesian(x, y, radius - p, endAngle);
+        var end10 = polarToCartesian(x, y, radius - p, startAngle);
+
+        var largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+
+        var d = [
+            "M", start.x, start.y,
+            "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y,
+            "L", end10.x, end10.y,
+            "A", radius-p, radius-p, 0, largeArcFlag, 1, start10.x, start10.y,
+            "Z"
+        ].join(" ");
+
+        return d;
+    }
+
+    window.onload = function() {
+        function addNode(top,left) {
+            var cln = itm.cloneNode(true);
+            var newNode = document.getElementsByTagName('body')[0].appendChild(cln);
+            newNode.style.position = 'absolute';
+            newNode.style.top = top + 'px';
+            newNode.style.left = left + 'px';
+        }
+        function paint(circleNum, count, s, radius,) {
+            //console.log(circleNum, count, s, radius);
+            var id, startAngle, endAngle;
+            var i = 0;
+            var p = 360/count;
+            for (i; i < count; i++) {
+                id = 'arc' + circleNum + '-' + i;
+                startAngle = s + (i * p);
+                endAngle = s + ((i+1) * p);
+                document.getElementById(id).setAttribute("d", describeArc(cX, cY, radius, startAngle, endAngle));
+            }
+        }
+
+        var itm = document.getElementById('arcs');
+        var cX = 200, cY = 200;
+        SECTOR_HEIGHT = 18;
+
+        //paint(номерКруга, количествоДелений, s, радиус) - рисуем подкруги и сектора в них
+        var s = 0, radius = 18;
+        app.elements.reverse().forEach((item, i) => {
+            paint(i, item.count, s, radius);
+            s = s + 20; radius = radius +18
+        });
+
+        //addNode(координатаОтВерха, КоординатаСлева) - Клоинруем круги на странице
+        var coordsData = [[40,600],[520,40],[520,600],[1020,40],[1020,600]];
+        coordsData.forEach(item => {
+            addNode(item[0], item[1])
+        });
+    };
+</script>
+</body>
+</html>
