@@ -30,8 +30,8 @@
                                placeholder="номер круга" readonly>
                     </th>
                     <td>
-                        <input v-model="rows[i].count" type="number" :name="'tasks[' + i + '][count]'" class="form-control"
-                               placeholder="сектора" required>
+                        <input v-model="rows[i].count" type="number" min="1" :name="'tasks[' + i + '][count]'"
+                               class="form-control" placeholder="сектора" required>
                     </td>
                     <td class="relative">
                         <input v-model="rows[i].color" type="text" :name="'tasks[' + i + '][color]'" class="form-control" placeholder="цвет" required>
@@ -50,6 +50,7 @@
         <button class="btn btn-success mt-2 mr-1" type="button" @click="addNewNode">Добавить задачу</button>
         <button class="btn btn-success mt-2 mr-1" type="button" @click="preview">Preview</button>
         <button class="btn btn-success mt-2 mr-1" type="button" @click="getRandomColor">Random color</button>
+        <button class="btn btn-success mt-2 mr-1" type="button" @click="fakeData">Random data</button>
         <button class="btn btn-success mt-2" type="submit">Страница для печати</button>
     </form>
     <div class="d-flex align-items-center mt-2" v-if="visible">
@@ -88,6 +89,14 @@
                     item.color = '#' + Math.random().toString(16).slice(2, 8);
                 })
             },
+          fakeData() {
+              this.rows = [
+                { num: 0, count: 3, color: '#50c605', task: 'Купить молоко' },
+                { num: 0, count: 2, color: '#28cdc1', task: 'Вырастить сына' },
+                { num: 0, count: 2, color: '#ba799f', task: 'Посадить дерево' },
+                { num: 0, count: 4, color: '#ced056', task: 'Построить дом' },
+              ];
+          },
             preview() {
                 this.visible = true;
                 this.elements = this.rows.slice();
@@ -95,22 +104,22 @@
             },
             onload() {
                 function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
-                    var angleInRadians = (angleInDegrees-90) * Math.PI / 180.0;
+                    const angleInRadians = (angleInDegrees-90) * Math.PI / 180.0;
                     return {
                         x: centerX + (radius * Math.cos(angleInRadians)),
                         y: centerY + (radius * Math.sin(angleInRadians))
                     };
                 }
                 function describeArc(x, y, radius, startAngle, endAngle){
-                    var p = app.$data.SECTOR_HEIGHT;
-                    var start = polarToCartesian(x, y, radius, endAngle);
-                    var end = polarToCartesian(x, y, radius, startAngle);
-                    var start10 = polarToCartesian(x, y, radius - p, endAngle);
-                    var end10 = polarToCartesian(x, y, radius - p, startAngle);
+                    const p = app.$data.SECTOR_HEIGHT;
+                    const start = polarToCartesian(x, y, radius, endAngle);
+                    const end = polarToCartesian(x, y, radius, startAngle);
+                    const start10 = polarToCartesian(x, y, radius - p, endAngle);
+                    const end10 = polarToCartesian(x, y, radius - p, startAngle);
 
-                    var largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+                    const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
 
-                    var d = [
+                    const d = [
                         "M", start.x, start.y,
                         "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y,
                         "L", end10.x, end10.y,
@@ -121,10 +130,10 @@
                     return d;
                 }
                 function paint(item, s, radius, num) {
-                    var startAngle, endAngle;
-                    var i = 0;
-                    var p = 360/item.count;
-                    for (i; i < item.count; i++) {
+                    let startAngle, endAngle;
+                    const count = item.count <= 2 ? 0 : item.count;
+                    const p = 360/count;
+                    for (let i = 0; i < count; i++) {
                         startAngle = s + (i * p);
                         endAngle = s + ((i+1) * p);
                         app.$data.dataArray.push({
@@ -134,7 +143,7 @@
                         })
                     }
                 }
-                var cX = 200, cY = 200;
+                const cX = 200, cY = 200;
                 this.SECTOR_HEIGHT = 18;
 
                 //paint(количествоДелений, s, радиус) - рисуем подкруги и сектора в них
