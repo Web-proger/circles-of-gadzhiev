@@ -1,9 +1,12 @@
 const fakeData = [
-  { num: 0, count: 3, color: '#50c605', task: 'Купить молоко' },
-  { num: 0, count: 3, color: '#28cdc1', task: 'Вырастить сына' },
+  { num: 0, count: 0, color: '#50c605', task: 'Купить молоко' },
+  { num: 0, count: 1, color: '#28cdc1', task: 'Вырастить сына' },
   { num: 0, count: 2, color: '#ba799f', task: 'Посадить дерево' },
   { num: 0, count: 4, color: '#ced056', task: 'Построить дом' },
 ];
+
+// Высота сектора
+const SECTOR_HEIGHT = 30;
 
 let app =new Vue({
   el: '#app',
@@ -16,7 +19,7 @@ let app =new Vue({
     }],
     visible: false,
     elements: [],
-    SECTOR_HEIGHT: 35,
+    SECTOR_HEIGHT,
     dataArray: []
   },
   methods: {
@@ -66,11 +69,20 @@ let app =new Vue({
 
         return d;
       }
+      //paint(количествоДелений, s, радиус) - рисуем подкруги и сектора в них
+      /**
+       * @param {object} item - данные для отрисовки круга
+       * @param {object} item.num - порядковый номер сектора
+       * @param {number} item.count - количество секторов
+       * @param {string} item.color - цвет сектора
+       * @param {string} item.task - текст задачи
+       * @param {number} s - под каким углом будет первое разделение сектора
+       * @param {number} radius - радиус
+       */
       function paint(item, s, radius) {
         let startAngle, endAngle;
-        const count = item.count <= 1 ? 0 : item.count;
-        const p = 360/count;
-        for (let i = 0; i < count; i++) {
+        const p = 360/item.count;
+        for (let i = 0; i < item.count; i++) {
           startAngle = s + (i * p);
           endAngle = s + ((i+1) * p);
           app.$data.dataArray.push({
@@ -80,15 +92,16 @@ let app =new Vue({
           })
         }
       }
-      const cX = 200, cY = 200;
-      this.SECTOR_HEIGHT = 18;
 
-      //paint(количествоДелений, s, радиус) - рисуем подкруги и сектора в них
-      var s = 0, radius = 18;
+      const cX = 200, cY = 200;
+      let startSectorCoord = 0;  // Стартовый градус отрисовки разделителя секторов
+      const SHIFT_SECTOR = 20;  // Сдвиг отрисовки сектора
+      let radius = this.SECTOR_HEIGHT; // Стартовый радиус
       this.dataArray = [];
       this.elements.forEach((item) => {
-        paint(item, s, radius);
-        s = s + 20; radius = radius +18
+        paint(item, startSectorCoord, radius);
+        startSectorCoord = startSectorCoord + SHIFT_SECTOR;
+        radius = radius + this.SECTOR_HEIGHT;
       });
     }
   }
