@@ -66,10 +66,11 @@ let app =new Vue({
 
         return d;
       }
-      function paint(item, s, radius, num) {
+      function paint(item, s, radius) {
         let startAngle, endAngle;
-        const p = 360/item.count;
-        for (let i = 0; i < item.count; i++) {
+        const count = item.count <= 1 ? 0 : item.count;
+        const p = 360/count;
+        for (let i = 0; i < count; i++) {
           startAngle = s + (i * p);
           endAngle = s + ((i+1) * p);
           app.$data.dataArray.push({
@@ -84,8 +85,8 @@ let app =new Vue({
 
       //paint(количествоДелений, s, радиус) - рисуем подкруги и сектора в них
       var s = 0, radius = 18;
-      app.$data.dataArray = [];
-      this.elements.forEach((item, i) => {
+      this.dataArray = [];
+      this.elements.forEach((item) => {
         paint(item, s, radius);
         s = s + 20; radius = radius +18
       });
